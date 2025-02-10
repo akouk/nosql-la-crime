@@ -1,0 +1,6 @@
+Flask==3.1.0
+Flask-PyMongo==3.0.1 
+bson==0.5.10
+requests==2.32.3
+urllib3<2
+Faker==35.2.0 
