@@ -65,9 +65,12 @@ def create_location_data(new_crime):
     
 def create_status_data(new_crime):
     """Create status data from the crime data."""
+    status_code = new_crime.get("status", "IC")  # default to "IC" if not provided
+    status_description = new_crime.get("status_desc", "Invest Cont")  # default to "Invest Cont" if not provided
+
     return {
-        "code": new_crime.get("status"),
-        "description": new_crime.get("status_desc")
+        "code": status_code,
+        "description": status_description
     }
     
 def process_crime_data(new_crime):
