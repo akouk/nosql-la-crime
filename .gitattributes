@@ -1,1 +1,2 @@
 *.json filter=lfs diff=lfs merge=lfs -text
+data/crimes/crime_data.json filter=lfs diff=lfs merge=lfs -text
