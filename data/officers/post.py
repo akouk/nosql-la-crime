@@ -5,7 +5,7 @@ from pymongo import MongoClient
 
 file_path = os.path.join(os.path.dirname(__file__), 'police_officers_data.json')
 
-# load data from police_officers_data.json
+# load officers data from JSON file
 try:
     with open(file_path, 'r') as f:
         officers_data = json.load(f)

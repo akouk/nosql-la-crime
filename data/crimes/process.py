@@ -1,4 +1,4 @@
-from data.crimes.validation import validate_crime_data
+from data.crimes.validation import validate_new_crime_data
 
 def create_area_data(new_crime):
     """Create area data from the crime data."""
@@ -75,7 +75,7 @@ def create_status_data(new_crime):
     
 def process_crime_data(new_crime):
     """Process and validate crime data to create a crime report."""
-    validation_error, status_code = validate_crime_data(new_crime)
+    validation_error, status_code = validate_new_crime_data(new_crime)
     if validation_error:
         return None, validation_error, status_code
 

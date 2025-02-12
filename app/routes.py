@@ -1,13 +1,14 @@
 from flask import Blueprint, jsonify, request
 from data.crimes.validation import (
-    validate_crime_data,
-    validate_dr_no,
-    validate_age,
-    validate_sex,
-    validate_descent,
-    validate_coordinates
+    validate_new_crime_data,
+    validate_partial_crime_data
 )
 from data.crimes.process import process_crime_data
+from app.queries.reports_per_crm_cd import get_reports_per_crime_code
+from app.queries.reports_per_day_for_crm_cd import get_reports_per_day_for_crime_code
+from app.queries.top_three_crimes_per_area_for_day import get_top_three_crimes_per_area_for_day
+from app.queries.two_least_common_crimes_per_day import get_two_least_common_crimes_per_day
+from app.queries.weapons_used_for_same_crime_in_multiple_areas import get_weapons_used_for_same_crime_in_multiple_areas
 
 crime_routes = Blueprint('crime_routes', __name__)
 
@@ -20,7 +21,7 @@ def insert_crime():
     new_crime = request.json
     
     # validate the incoming crime data
-    validation_error, status_code = validate_crime_data(new_crime)
+    validation_error, status_code = validate_new_crime_data(new_crime)
     if validation_error:
         return jsonify(validation_error), status_code
     
@@ -56,41 +57,82 @@ def update_crime(dr_no):
         return jsonify({"message": f"Crime report with DR_NO {dr_no} updated successfully!"}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+# query 1
+@crime_routes.route("/reports-per-crime-code", methods=["GET"])
+def reports_per_crime_code():
+    # Extract date range from query parameters
+    start_date = request.args.get("start_date")
+    end_date = request.args.get("end_date")
+
+    if not start_date or not end_date:
+        return jsonify({"error": "Both start_date and end_date are required."}), 400
+
+    try:
+        # Call the query function
+        result = get_reports_per_crime_code(crime_routes.mongo.db, start_date, end_date)
+        return jsonify(result), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
     
+# query 2
+@crime_routes.route("/reports-per-day-for-crime-code", methods=["GET"])
+def reports_per_day_for_crime_code():
+    # Extract parameters from query parameters
+    crime_code = request.args.get("crime_code")
+    start_date = request.args.get("start_date")
+    end_date = request.args.get("end_date")
+
+    if not crime_code or not start_date or not end_date:
+        return jsonify({"error": "crime_code, start_date, and end_date are required."}), 400
+
+    try:
+        # Call the query function
+        result = get_reports_per_day_for_crime_code(crime_routes.mongo.db, crime_code, start_date, end_date)
+        return jsonify(result), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
     
-def validate_partial_crime_data(updated_fields, existing_crime):
-    """
-    Validate only the fields that are being updated.
-    """
-    errors = {}
+
+# query 3
+@crime_routes.route("/top-three-crimes-per-area-for-day", methods=["GET"])
+def top_three_crimes_per_area_for_day():
+    # Extract specific date from query parameters
+    specific_date = request.args.get("specific_date")
+
+    if not specific_date:
+        return jsonify({"error": "specific_date is required."}), 400
+
+    try:
+        # Call the query function
+        result = get_top_three_crimes_per_area_for_day(crime_routes.mongo.db, specific_date)
+        return jsonify(result), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# query 4
+@crime_routes.route("/two-least-common-crimes-in-time-range", methods=["GET"])
+def two_least_common_crimes_in_time_range():
+    # Extract date range from query parameters
+    start_date = request.args.get("start_date")
+    end_date = request.args.get("end_date")
+
+    if not start_date or not end_date:
+        return jsonify({"error": "Both start_date and end_date are required."}), 400
+
+    try:
+        # Call the query function
+        result = get_two_least_common_crimes_per_day(crime_routes.mongo.db, start_date, end_date)
+        return jsonify(result), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
     
-    # validate 'dr_no' if it's being updated
-    if "dr_no" in updated_fields:
-        if not validate_dr_no(updated_fields["dr_no"]):
-            errors["dr_no"] = "Invalid 'dr_no'. It must be a 9-digit number."
-
-    # validate 'vict_age' if it's being updated
-    if "vict_age" in updated_fields:
-        if not validate_age(updated_fields["vict_age"]):
-            errors["vict_age"] = "Invalid victim age."
-
-    # validate 'vict_sex' if it's being updated
-    if "vict_sex" in updated_fields:
-        if not validate_sex(updated_fields["vict_sex"]):
-            errors["vict_sex"] = "Invalid victim sex."
-
-    # validate 'vict_descent' if it's being updated
-    if "vict_descent" in updated_fields:
-        if not validate_descent(updated_fields["vict_descent"]):
-            errors["vict_descent"] = "Invalid victim descent."
-
-    # validate 'lat' and 'lon' if they're being updated
-    if "lat" in updated_fields or "lon" in updated_fields:
-        lat = updated_fields.get("lat", existing_crime.get("lat"))
-        lon = updated_fields.get("lon", existing_crime.get("lon"))
-        if not validate_coordinates(lat, lon):
-            errors["coordinates"] = "Invalid Latitude or/and longitude."
-
-    if errors:
-        return {"error": errors}, 400
-    return None, None
+# query 5
+@crime_routes.route("/weapons-used-for-same-crime-in-multiple-areas", methods=["GET"])
+def weapons_used_for_same_crime_in_multiple_areas():
+    try:
+        # Call the query function
+        result = get_weapons_used_for_same_crime_in_multiple_areas(crime_routes.mongo.db)
+        return jsonify(result), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500

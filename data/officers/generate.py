@@ -5,11 +5,11 @@ fake = Faker()
 
 # G=generate 100 police officers
 officers = []
-for _ in range(100):
+for _ in range(999):
     officer = {
-        "officer_id": fake.random_int(min=1, max=999),
+        "badge_no": fake.random_int(min=1, max=999),
         "name": fake.name(),
-        "rank": fake.job(),
+        "email": fake.email(),
         "area": fake.random_int(min=1, max=21)
     }
     officers.append(officer)

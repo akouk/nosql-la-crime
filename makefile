@@ -9,6 +9,7 @@ install: venv
 # Run the download script to fetch data
 # download: install
 # 	./venv/bin/python data/download.py
+# ./venv/bin/python -m data.officers.generate
 
 # Run the application
 run:

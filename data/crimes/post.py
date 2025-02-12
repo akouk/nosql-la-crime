@@ -1,11 +1,11 @@
 import json
 import os
 from pymongo import MongoClient
-from data.crimes.process import process_crime_data
+from .process import process_crime_data
 
-file_path = os.path.join(os.path.dirname(__file__), 'crime_data.json')
+file_path = os.path.join(os.path.dirname(__file__), 'crime_data2222.json')
 
-# load data from crime_data.json
+# load crime data from JSON file
 try:
     with open(file_path, 'r') as f:
         crime_data = json.load(f)
@@ -27,7 +27,9 @@ for crime in crime_data:
     processed_crime, error, status_code = process_crime_data(crime)
     
     if error:
-        print(f"Error processing crime data: {error}")
+        # print the DR_NO of the record that failed validation
+        dr_no = crime.get("dr_no", "Unknown DR_NO")
+        print(f"Skipping record with DR_NO: {dr_no} due to validation error: {error}")
         continue  # skip this record if there's an error
     
     # insert the processed crime data into the database
