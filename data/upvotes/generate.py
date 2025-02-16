@@ -1,77 +1,100 @@
 import json
-import random
-from datetime import datetime, timedelta
 from pymongo import MongoClient
+from datetime import datetime, timedelta
+import random
 
 # connect to MongoDB
 client = MongoClient("mongodb://localhost:27017/")
 db = client["la_crime_db"]
-crime_collection = db['crime_reports']
+
+# retrieve all officers from the police_officers collection
 officers_collection = db['police_officers']
+all_officers = list(officers_collection.find({}))
 
-# get all crime reports
-all_crimes = list(crime_collection.find({}, {'dr_no': 1}))
-total_crimes = len(all_crimes)
+# retrieve all crime reports from the crime_reports collection
+crime_reports_collection = db['crime_reports']
+all_reports = list(crime_reports_collection.find({}))
 
-# calculate the number of crimes to upvote (at least 1/3 of all crimes)
-num_crimes_to_upvote = max(1, total_crimes // 3)
+# function to generate a random date between 01/01/2020 and now
+def generate_random_date(start_date, end_date):
+    time_between_dates = end_date - start_date
+    random_number_of_days = random.randrange(time_between_dates.days)
+    random_date = start_date + timedelta(days=random_number_of_days)
+    return random_date.strftime("%Y-%m-%d")
 
-# randomly select crimes to upvote
-selected_crimes = random.sample(all_crimes, num_crimes_to_upvote)
-
-# get all police officers
-all_officers = list(officers_collection.find({}, {'badge_no': 1, 'name': 1, 'email': 1, 'area': 1}))
-total_officers = len(all_officers)
-
-# track upvotes per officer
-officer_upvotes_count = {officer['badge_no']: 0 for officer in all_officers}
-
-
-# function to generate a random date between two dates
-def get_random_date(start_date, end_date):
-    delta = end_date - start_date
-    random_days = random.randint(0, delta.days)
-    return start_date + timedelta(days=random_days)
-
-# define start and end dates for random upvote date
+# generate fake upvotes
+upvotes = []
 start_date = datetime(2020, 1, 1)
 end_date = datetime.now()
 
-# generate upvote data
-upvote_data = []
-for crime in selected_crimes:
-    dr_no = crime['dr_no']
-    
-    # randomly select an officer
+# track upvoted combinations of officer badge_no and report dr_no
+upvoted_combinations = set()
+
+# track the number of upvotes per officer
+officer_upvote_counts = {officer["badge_no"]: 0 for officer in all_officers}
+
+# number of upvotes to generate 
+num_upvotes = max(1, len(all_reports) // 3)
+
+# pre-generate a pool of random dates for each report
+report_dates = {}
+for report in all_reports:
+    # generate a small pool of random dates for this report
+    num_dates = random.randint(1, 5)  
+    dates = [generate_random_date(start_date, end_date) for _ in range(num_dates)]
+    report_dates[report["dr_no"]] = dates
+
+# loop to generate upvotes
+for _ in range(num_upvotes):
+    # randomly pick an officer and a report
     officer = random.choice(all_officers)
-    officer_badge_no = officer['badge_no']
+    report = random.choice(all_reports)
     
-    # check if the officer has less than 1000 upvotes
-    if officer_upvotes_count[officer_badge_no] >= 1000:
-        continue  # Skip if the officer has already 1000 upvotes
+    # check if the officer has already made 1000 upvotes
+    if officer_upvote_counts[officer["badge_no"]] >= 1000:
+        continue  # Skip this officer
     
-    # generate a random upvote date
-    upvote_date = get_random_date(start_date, end_date).strftime('%Y-%m-%d')
+    # create a unique key for the combination of officer and report
+    combination_key = (officer["badge_no"], report["dr_no"])
     
-    # add upvote to the list
-    upvote_data.append({
-        "dr_no": dr_no,
+    # check if this combination has already been upvoted
+    if combination_key in upvoted_combinations:
+        continue  # Skip this combination
+    
+    # get the pre-generated dates for this report
+    dates_for_report = report_dates[report["dr_no"]]
+    
+    # randomly pick one of the pre-generated dates for this upvote
+    upvote_date = random.choice(dates_for_report)
+    
+    # create the upvote document
+    upvote = {
         "officer": {
-            "badge_no": officer_badge_no,
-            "name": officer['name'],
-            "email": officer['email'],
-            "area": officer['area']
-            
+            "badge_no": officer["badge_no"],
+            "name": officer["name"],
+            "email": officer["email"]
+        },
+        "report": {
+            "dr_no": report["dr_no"],
+            "area": report["area"]
         },
         "upvote_date": upvote_date
-    })
+    }
     
-    # Increment the officer's upvote count
-    officer_upvotes_count[officer_badge_no] += 1
+    # add the upvote to the list
+    upvotes.append(upvote)
     
-# save the upvote data to a JSON file
+    # add the combination to the set to prevent duplicate upvotes
+    upvoted_combinations.add(combination_key)
+    
+    # increment the upvote count for the officer
+    officer_upvote_counts[officer["badge_no"]] += 1
+
+
+# save the upvote data to a JSON file, locally, in the same directory
 output_file = 'data/upvotes/upvotes_data.json'
 with open(output_file, 'w') as f:
-    json.dump(upvote_data, f, indent=4)
+    json.dump(upvotes, f, indent=4)
 
 print(f"Upvote data generated and saved to {output_file}.")
+

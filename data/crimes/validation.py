@@ -49,7 +49,7 @@ def validate_new_crime_data(new_crime):
     
     return None, None
 
-# Dictionary to map fields to their validation functions and error messages
+# dictionary to map fields to their validation functions and error messages
 VALIDATION_RULES = {
     "dr_no": (validate_dr_no, "Invalid 'dr_no'. It must be a 9-digit number."),
     "vict_age": (validate_age, "Invalid victim age."),

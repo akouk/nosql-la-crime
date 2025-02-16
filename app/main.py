@@ -5,13 +5,13 @@ from app.routes import crime_routes
 
 app = Flask(__name__)
 
-# Initialize MongoDB connection
+# initialize MongoDB connection
 mongo = init_db(app=app)
 
-# Pass the `mongo` object to the Blueprint
+# pass the `mongo` object to the Blueprint
 crime_routes.mongo = mongo
 
-# Register routes
+# register routes
 app.register_blueprint(crime_routes)
 
 if __name__ == '__main__':

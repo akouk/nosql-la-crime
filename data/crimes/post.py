@@ -3,7 +3,7 @@ import os
 from pymongo import MongoClient
 from .process import process_crime_data
 
-file_path = os.path.join(os.path.dirname(__file__), 'crime_data2222.json')
+file_path = os.path.join(os.path.dirname(__file__), 'crime_data.json')
 
 # load crime data from JSON file
 try:
