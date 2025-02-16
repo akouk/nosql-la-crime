@@ -30,7 +30,5 @@ run:
 	./venv/bin/python -m app.main
 
 # setup all steps: create venv, install dependencies, and run the app
-# setup: venv install cimes officers upvotes indexes run
-setup: venv install indexes run
+setup: venv install cimes officers upvotes indexes run
 
-# setup: venv install run
